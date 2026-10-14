@@ -17,6 +17,7 @@
 Track repeatibility rate (can it consistently get a point), precision(true pos vs false pos, etc.) and recall (how much of the real points did it actually get), localization error (dist between keypoint and actual point irl), keypoints per second
 
 # Key Definitions
+inprogress ok dont judge \n
 SIFT:
 ORB:
 BRISK:

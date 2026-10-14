@@ -55,7 +55,8 @@ def trim_output(keypoints: Sequence[cv.KeyPoint], descriptors: np.ndarray | None
 
 def repeat_and_error(og_kp, img_kp, h, img_size: tuple[int, int], threshold) -> tuple[int | float, int | float, int | float, int | float]:
     """
-    Note that img_size should be from img.shape which returns a (height, width) kinda thing
+    Note that img_size should be from img.shape which returns a (height, width) kinda thing \n
+    out put is repeatability, localization error, number of visible points in transformed image, and number of points that were repeated
     """
     if not og_kp or not img_kp:
         return np.nan, np.nan, 0, 0
@@ -95,8 +96,8 @@ def repeat_and_error(og_kp, img_kp, h, img_size: tuple[int, int], threshold) -> 
     if int(np.sum(repeat_bool)) <= 0:
         return 0, np.nan, len(visible_pts), int(np.sum(repeat_bool))
 
-    repeatability = int(np.mean(repeat_bool)) # how many points 
-    loc_error = int(np.mean(dist[repeat_bool]))
+    repeatability = float(np.mean(repeat_bool)) # how many points 
+    loc_error = float(np.mean(dist[repeat_bool]))
 
     return repeatability, loc_error, len(visible_pts), int(np.sum(repeat_bool))
 
@@ -107,24 +108,40 @@ def repeat_and_error(og_kp, img_kp, h, img_size: tuple[int, int], threshold) -> 
 
 
 
-# path = r"hpatches-sequences-release\v_adam"
+path = r"hpatches-sequences-release\v_adam"
 
-thing = get_detector("brisk", 1000)
-# og, img_n, h =  load_image_pair(path, 2)
-# print("H shape", h.shape)
+brisk = get_detector("brisk", 1000)
+
+og, img, h = load_image_pair(path, 2)
+kp, des = brisk.detectAndCompute(og, None)
+kpN, desN = brisk.detectAndCompute(img, None)
+
+print(f"brisk 5: {repeat_and_error(kp, kpN, h, og.shape, 5)}")
+print(f"brisk 3: {repeat_and_error(kp, kpN, h, og.shape, 3)}")
+print(f"brisk 1: {repeat_and_error(kp, kpN, h, og.shape, 1)}")
+
+
+# ------------- testing the repeat and error func --------------
+# thing = get_detector("brisk", 1000)
+# og, img = cv.imread("img/sample1.jpg", cv.IMREAD_GRAYSCALE), cv.imread("img/sample1.jpg", cv.IMREAD_GRAYSCALE)
+# h = np.eye(3)
+
 # kp, des = thing.detectAndCompute(og, None)
 # kp, des = trim_output(kp, des, 1000)
-# print(f"len(kp) == des.shape[0]:{len(kp) == des.shape[0]} ")
-# print(f"len(kp) <= 1000: {len(kp) <= 1000}")
-# print(f"kp[0].response >= kp[-1].response: {kp[0].response >= kp[-1].response}")
 
-og, img = cv.imread("img/sample1.jpg", cv.IMREAD_GRAYSCALE), cv.imread("img/sample1.jpg", cv.IMREAD_GRAYSCALE)
-h = np.eye(3)
+# kpN, desN = thing.detectAndCompute(img, None)
+# kpN, desN = trim_output(kp, des, 1000)
 
-kp, des = thing.detectAndCompute(og, None)
-kp, des = trim_output(kp, des, 1000)
+# print(repeat_and_error(kp, kpN, h, og.shape, 3))
 
-kpN, desN = thing.detectAndCompute(img, None)
-kpN, desN = trim_output(kp, des, 1000)
+# ==========
+# h[0][2] = 5 # shift right by 5
+# print(f"Toy Shift: {repeat_and_error(kp, kpN, h, (1000, 1000), 3)}")
 
-print(repeat_and_error(kp, kpN, h, og.shape, 3))
+# kpN = [cv.KeyPoint(16, 10, 1), cv.KeyPoint(56, 50, 1)]
+# print(f"Toy Offset: {repeat_and_error(kp, kpN, h, (1000,1000), 3)}")
+
+# kpN = [cv.KeyPoint(15, 10, 1), cv.KeyPoint(55, 50, 1), cv.KeyPoint(1001, 1000, 1)]
+# print(f"Toy Offset: {repeat_and_error(kp, kpN, h, (1000,1000), 3)}")
+
+# print(f"empty: {repeat_and_error([], [], h, (100, 100), 3)}")
