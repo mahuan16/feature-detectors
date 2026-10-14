@@ -1,3 +1,6 @@
+# Credits
+- credit to https://github.com/hpatches/hpatches-dataset/tree/master for sequence images
+
 # Issues
 - say u have a large object (mechanical keyboard), it will detect the distinct keys rather than treat the keyboard as a whole; raising contrast does not help
 - too high a gaussian blur makes it not detect anything at all 
