@@ -4,6 +4,10 @@ import cv2 as cv
 from matplotlib import pyplot as plt
 from collections.abc import Sequence
 from scipy import spatial
+import time
+
+NUM_LOOPS = 3 # the number of times to detectandcompute so we can calculate average time
+"""the number of times to detectandcompute so we can calculate average time"""
 
 def load_image_pair(folder_path: str, num: int):
     """
@@ -16,6 +20,20 @@ def load_image_pair(folder_path: str, num: int):
     homography = os.path.join(folder_path, f"H_1_{num}")
 
     return cv.imread(og_img, cv.IMREAD_GRAYSCALE), cv.imread(comp_img, cv.IMREAD_GRAYSCALE), np.loadtxt(homography)
+
+def load_gray(path: str, num: int = 1):
+    """
+    returns grayscale version of image; defaults to image 1
+    """
+    img_path = os.path.join(path, f"{num}.ppm")
+    return cv.imread(img_path, cv.IMREAD_GRAYSCALE)
+
+def load_homography(path: str, num: int):
+    """
+    returns image num's homography
+    """
+    h_path = os.path.join(path, f"H_1_{num}")
+    return np.loadtxt(h_path)
 
 def get_detector(name: str, n_cap: int):
     """
@@ -101,27 +119,66 @@ def repeat_and_error(og_kp, img_kp, h, img_size: tuple[int, int], threshold) -> 
 
     return repeatability, loc_error, len(visible_pts), int(np.sum(repeat_bool))
 
+def detect(img, detector, max_n: int) -> tuple[Sequence[cv.KeyPoint], np.ndarray | None, int, float]:
+    """
+    detects and computes on given image with given detector, 
+    returns the trimmed keypoints and descriptors, 
+    as well as the length of the original keypoints and the average detectandcompute time
+    """
 
-    
+    kp, des = detector.detectAndCompute(img, None) # warm up (builds initial cache)
+
+    average = []
+    for i in range(NUM_LOOPS):
+        start = time.perf_counter()
+        kp, des = detector.detectAndCompute(img, None)
+        end = time.perf_counter()
+        average.append(end-start)
+
+    new_kp, new_des = trim_output(kp, des, max_n)
+    return new_kp, new_des, len(kp),  np.median(average)
 
 
+# def process(img_path, img_num, detector, threshold, max_n):
+
+#     og, img, h = load_image_pair(img_path, img_num)
+
+#     start = time.perf_counter()
+
+#     kp, des = detector.detectAndCompute(og, None)
+#     num_kp = len(kp)
+#     kp, des = trim_output(kp, des, max_n)
+
+#     kpN, desN = detector.detectAndCompute(img, None)
+#     num_kpN = len(kpN)
+#     kpN, desN = trim_output(kpN, desN, max_n)
+
+#     end = time.perf_counter()
+#     elapsed = end-start # time taken
+
+#     result = repeat_and_error(kp, kpN, h, og.shape, threshold)
+
+#     return elapsed, result, (num_kp, num_kpN)
 
 
-
-path = r"hpatches-sequences-release\v_adam"
-
-brisk = get_detector("brisk", 1000)
-
-og, img, h = load_image_pair(path, 2)
-kp, des = brisk.detectAndCompute(og, None)
-kpN, desN = brisk.detectAndCompute(img, None)
-
-print(f"brisk 5: {repeat_and_error(kp, kpN, h, og.shape, 5)}")
-print(f"brisk 3: {repeat_and_error(kp, kpN, h, og.shape, 3)}")
-print(f"brisk 1: {repeat_and_error(kp, kpN, h, og.shape, 1)}")
 
 
 # ------------- testing the repeat and error func --------------
+
+
+# path = r"hpatches-sequences-release\v_adam"
+
+# brisk = get_detector("brisk", 1000)
+
+# og, img, h = load_image_pair(path, 2)
+# kp, des = brisk.detectAndCompute(og, None)
+# kpN, desN = brisk.detectAndCompute(img, None)
+
+# print(f"brisk 5: {repeat_and_error(kp, kpN, h, og.shape, 5)}")
+# print(f"brisk 3: {repeat_and_error(kp, kpN, h, og.shape, 3)}")
+# print(f"brisk 1: {repeat_and_error(kp, kpN, h, og.shape, 1)}")
+
+
 # thing = get_detector("brisk", 1000)
 # og, img = cv.imread("img/sample1.jpg", cv.IMREAD_GRAYSCALE), cv.imread("img/sample1.jpg", cv.IMREAD_GRAYSCALE)
 # h = np.eye(3)
