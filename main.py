@@ -15,7 +15,7 @@ NUM_KEYPOINTS = 1000
 THRESHOLD = 3
 PATH = "hpatches-sequences-release"
 RESULTS_FILE = "results.csv"
-NUM_FOLDERS = 10 # number of folders to iterate througb22
+NUM_FOLDERS = 30 # number of folders to iterate througb22
 
 def get_image_folders() -> list[str]:
     """
@@ -32,6 +32,8 @@ def main():
             viewpoint.append(scene)
         else:
             illumination.append(scene)
+    print(f"viewpoint: {len(viewpoint)}")
+    print(f"illumination: {len(illumination)}")
 
     brisk = process.get_detector('brisk', NUM_KEYPOINTS)
     orb = process.get_detector('orb', NUM_KEYPOINTS)
