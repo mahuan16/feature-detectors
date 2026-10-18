@@ -15,7 +15,8 @@ NUM_KEYPOINTS = 1000
 THRESHOLD = 3
 PATH = "hpatches-sequences-release"
 RESULTS_FILE = "results.csv"
-NUM_FOLDERS = 30 # number of folders to iterate througb22
+NUM_FOLDERS = 60 # number of folders to iterate throug
+# note that there are totla 59 viewpoint folders and total 57 illumination folders
 
 def get_image_folders() -> list[str]:
     """
