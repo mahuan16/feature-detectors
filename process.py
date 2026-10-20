@@ -138,3 +138,62 @@ def detect(img, detector, max_n: int) -> tuple[Sequence[cv.KeyPoint], np.ndarray
     new_kp, new_des = trim_output(kp, des, max_n)
     return new_kp, new_des, len(kp),  np.median(average)
 
+def matching(des, desN, kp, kpN, matcher, h, threshold: float | int, num_repeated, r: float) -> tuple[ float,  float, int, int ]:
+    """
+    match precision, match recall, the number of matches after the ratio test, 
+    and the number of correct matches.
+    """
+    if des is None or desN is None:
+        return np.nan, np.nan, 0, 0
+
+    nearest = matcher.knnMatch(des, desN, 2)
+
+    matches = []
+    for item in nearest:
+        if len(item) < 2:
+            continue
+        first, sec = item
+        if first.distance <= r*sec.distance:
+            matches.append(first)
+
+    original = [kp[m.queryIdx].pt for m in matches]
+    matched_pts = [kpN[m.trainIdx].pt for m in matches]
+    
+    original = np.array(original, dtype=np.float32)
+
+    if not original.any(): # i hate njmpy arrays.........................
+        return np.nan, np.nan, len(matches), 0
+
+    reshape_pts = original.reshape(-1, 1, 2)
+    transformed = cv.perspectiveTransform(reshape_pts, h)
+    transformed = transformed.reshape(-1, 2) # what the matches should be looking like
+
+    diff = matched_pts - transformed
+
+    dist = np.linalg.norm(diff, axis=1)
+
+    dist_bool = dist < threshold # boolean array i swear
+
+    correct = np.sum(dist_bool)
+
+    precision = correct/len(matches) if len(matches) else np.nan
+    recall = correct/num_repeated if num_repeated > 0 else 0
+        
+
+    return float(precision), float(recall), len(matches), int(correct)
+
+
+# orb = get_detector("orb", 1000)
+
+# path = "hpatches-sequences-release/v_abstract"
+# mine = load_gray(path)
+# h = np.eye(3)
+# h[0][2] = 50
+
+# kp, des, kp_num, time = detect(mine, orb, 1000)
+
+# repeat, loc_error, vis_n, repeat_n = repeat_and_error(kp, kp, h, mine.shape, 3)
+
+# orb_m = cv.BFMatcher(cv.NORM_HAMMING)
+# print(matching(des, des, kp, kp, orb_m, h, 3, repeat_n, 0.75))
+
