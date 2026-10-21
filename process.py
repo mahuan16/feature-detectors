@@ -153,7 +153,7 @@ def matching(des, desN, kp, kpN, matcher, h, threshold: float | int, num_repeate
         if len(item) < 2:
             continue
         first, sec = item
-        if first.distance <= r*sec.distance:
+        if first.distance < r*sec.distance:
             matches.append(first)
 
     original = [kp[m.queryIdx].pt for m in matches]
@@ -161,8 +161,8 @@ def matching(des, desN, kp, kpN, matcher, h, threshold: float | int, num_repeate
     
     original = np.array(original, dtype=np.float32)
 
-    if not original.any(): # i hate njmpy arrays.........................
-        return np.nan, np.nan, len(matches), 0
+    if len(matches) == 0: # i hate njmpy arrays.........................
+        return np.nan, np.nan if len(num_repeated) == 0 else 0, len(matches), 0
 
     reshape_pts = original.reshape(-1, 1, 2)
     transformed = cv.perspectiveTransform(reshape_pts, h)
